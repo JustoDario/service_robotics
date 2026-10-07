@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="Memoria de la práctica 1 de Robótica de Servicio: registro del mapa y exploración con BSA.">
+    <meta name="description" content="Memoria de la práctica 1 de Robótica de Servicio">
     <title>Práctica 1 | Robótica de Servicio</title>
     <link rel="stylesheet" href="../style.css">
 </head>
@@ -13,7 +13,7 @@
     <header class="site-header">
         <nav class="site-nav" aria-label="Navegación principal">
             <a class="site-brand" href="../">Robótica de Servicio</a>
-            <span class="nav-note">Memoria de la práctica 1</span>
+            <span class="nav-note">Blog de la práctica 1</span>
         </nav>
     </header>
 
@@ -21,20 +21,20 @@
         <p class="breadcrumb"><a href="../">Inicio</a> / Práctica 1</p>
 
         <header class="page-hero">
-            <p class="eyebrow">Percepción · planificación · navegación</p>
-            <h1>Práctica 1: exploración del entorno</h1>
-            <p>Registro del mapa de Gazebo y planificación de una ruta de cobertura con el algoritmo BSA.</p>
+            <p class="eyebrow">Robot de limpieza autónomo de gama alta</p>
+            <h1>Práctica 1:</h1>
+            <p>Robot de limpieza autónomo de gama alta: Registro del mapa de Gazebo ,planificación de una ruta de cobertura con el algoritmo BSA y controlador de movimiento.</p>
         </header>
 
         <article class="content-card">
             <nav class="callout" aria-label="Contenido de la memoria">
                 <strong>En esta memoria</strong>
-                <p><a href="#objetivos">Objetivos</a> · <a href="#registro">Registro del mapa</a> · <a href="#exploracion">Rejilla y exploración</a> · <a href="#resultados">Resultados</a> · <a href="#conclusiones">Conclusiones</a></p>
+                <p><a href="#objetivos">Objetivos</a> · <a href="#registro">Registro del mapa</a> · <a href="#exploracion">Rejilla y exploración</a> · <a href="#resultados">Resultados</a></p>
             </nav>
 
             <section aria-labelledby="introduccion">
                 <h2 id="introduccion">Introducción</h2>
-                <p>El objetivo de la práctica es que un robot aspirador recorra las zonas transitables de un mapa conocido. Para planificar sus movimientos en una rejilla, primero hay que relacionar las coordenadas del mundo de Gazebo con los píxeles de la imagen del mapa. Después, el robot utiliza esa correspondencia para construir una ruta de exploración y seguirla en la simulación.</p>
+                <p>El objetivo de la práctica es que un robot aspirador recorra las zonas transitables de un mapa conocido mientras limpia. Para planificar sus movimientos en una rejilla, primero hay que relacionar las coordenadas del mundo de Gazebo con los píxeles de la imagen del mapa. Después, el robot utiliza esa correspondencia para discretizar el mundo en una rejilla que usará para construir una ruta de exploración y seguirla usando el algoritmo BSA.</p>
             </section>
 
             <section id="objetivos" aria-labelledby="titulo-objetivos">
@@ -42,8 +42,8 @@
                 <ul>
                     <li>Calcular una transformación entre coordenadas del mundo y coordenadas de píxel a partir de puntos correspondientes.</li>
                     <li>Convertir el mapa en una rejilla y clasificar las celdas transitables y ocupadas.</li>
-                    <li>Planificar una ruta de cobertura con BSA, incluyendo el retroceso por celdas ya visitadas cuando sea necesario.</li>
-                    <li>Seguir la ruta con el robot simulado y mostrar el resultado.</li>
+                    <li>Planificar una ruta de cobertura con BSA, incluyendo el backtracking por celdas ya visitadas cuando se quede atascado(rodeado de celdas visitadas/obsaculos).</li>
+                    <li>Seguir la ruta con un controlador que corriga el error resultante del ruido de los actuadores</li>
                 </ul>
             </section>
 
@@ -92,94 +92,41 @@ print(T)</code></pre>
                 </figure>
 
                 <p>De la matriz obtuve una escala aproximada de 100,8 píxeles por metro. En el programa guardo la transformación inversa para convertir los centros de las celdas del mapa de vuelta a coordenadas del mundo.</p>
-                <pre><code>T_inv = np.linalg.inv(T)
-scale = 100.8  # píxeles por metro
-
-def world_to_pixel(x, y):
-    p_gazebo = np.array([x, y, 1.0])
-    p_img = np.dot(T, p_gazebo)
-    return int(p_img[0]), int(p_img[1])</code></pre>
+               
             </section>
 
             <section id="exploracion" aria-labelledby="titulo-exploracion">
                 <h3 id="titulo-exploracion">Fase 2 · Rejilla y exploración</h3>
-                <p>Dividí el mapa en celdas del tamaño aproximado del robot, cuyo diámetro es 0,34 m. Con la escala calculada, cada celda ocupa <code>int(0,34 × 100,8) = 34</code> píxeles por lado. Mantengo dos representaciones: <code>gridmap</code> almacena el estado de cada celda para la planificación y <code>display_map</code> sirve para visualizar la rejilla y el recorrido.</p>
+                <p>Dividí el mapa en celdas del tamaño aproximado del robot, cuyo diámetro es 0,34 m (explore el sistema de archivos y encontre el urdf,aunque tenia un mesh y no una primitiva con radio examine el tamaño desde la terminal con un script simple de python que usaba la libreria trimesh). Con la escala calculada, cada celda ocupa <code>int(0,34 × 100,8) = 34</code> píxeles por lado. Mantengo dos representaciones: <code>gridmap</code> almacena el estado de cada celda para la planificación y <code>display_map</code> sirve para visualizar la rejilla y el recorrido.</p>
 
                 <p>Para marcar obstáculos, erosiono la imagen y cuento los píxeles oscuros de cada celda. Si más del 60 % son oscuros, la celda se considera ocupada.</p>
-                <p class="code-caption">Inicialización de las celdas ocupadas en <code>p1.py</code></p>
-                <pre><code>cell_size = int(robot_diameter * scale)
-gridmap = np.zeros((grid_rows, grid_cols), dtype=int)
-
-kernel = np.ones((35, 35), np.uint8)
-eroded = cv2.erode(gray, kernel, iterations=1)
-
-for r in range(grid_rows):
-    for c in range(grid_cols):
-        y0, y1 = r * cell_size, (r + 1) * cell_size
-        x0, x1 = c * cell_size, (c + 1) * cell_size
-        pixels = eroded[y0:y1, x0:x1]
-        obstacle_pixels = np.sum(pixels &lt; 128)
-
-        if obstacle_pixels / pixels.size &gt; 0.6:
-            gridmap[r, c] = OBSTACLE</code></pre>
-
-                <p>El planificador BSA explora primero en el orden norte, este, sur y oeste. Al llegar a un punto sin celdas libres vecinas, vuelve a un punto de retorno y busca un camino por celdas visitadas. El plan completo se guarda en <code>path</code> antes de que empiece el movimiento.</p>
-                <pre><code># Prioridad de exploración: norte, este, sur y oeste
-next_dir = -2
-if is_cell_free(r - 1, c):
-    backtracking_stack.append((r, c))
-    next_dir = NORTH
-elif is_cell_free(r, c + 1):
-    backtracking_stack.append((r, c))
-    next_dir = EAST
-elif is_cell_free(r + 1, c):
-    backtracking_stack.append((r, c))
-    next_dir = SOUTH
-elif is_cell_free(r, c - 1):
-    backtracking_stack.append((r, c))
-    next_dir = WEST
-
-if next_dir == -2:
-    target_r, target_c = -1, -1
-    while backtracking_stack:
-        pr, pc = backtracking_stack[-1]
-        if (is_cell_free(pr - 1, pc) or is_cell_free(pr, pc + 1)
-                or is_cell_free(pr + 1, pc) or is_cell_free(pr, pc - 1)):
-            target_r, target_c = pr, pc
-            break
-        backtracking_stack.pop()
-
-    if target_r != -1:
-        return_route = bfs_path(r, c, target_r, target_c)</code></pre>
-
-                <p>Durante la ejecución, el bucle de control actualiza la pose del robot y, al alcanzar el objetivo actual, extrae el siguiente paso de la ruta. Para avanzar a una celda calculo su centro y lo convierto a coordenadas del mundo mediante la matriz inversa.</p>
+                
+                <p>El planificador BSA explora primero en el orden norte, este, sur y oeste. Al llegar a un punto sin celdas libres vecinas, vuelve a un punto de retorno y busca un camino por celdas . Tras revisarlo en clase, cambié a calcular la ruta completa al inicio y seguirla. Así, el planificador mantiene el orden de cobertura y el controlador se ocupa de alcanzar cada objetivo.</li>
+                    <li><strong>Parámetros de la rejilla.</strong> Tuve que ajustar la erosión, el porcentaje de píxeles oscuros que define un obstáculo y el tamaño visitadas. El plan completo se guarda en <code>path</code> antes de que empiece el movimiento.</p>
+                
+                <p>Durante la ejecución, el bucle de control actualiza la pose del robot y, al alcanzar el objetivo actual, extrae el siguiente paso de la ruta. Para avanzar a una celda calculo su centro y lo convierto a coordenadas del mundo mediante la matriz inversa de la matriz transformación sacada del registro.</p>
             </section>
 
             <section aria-labelledby="problemas">
                 <h3 id="problemas">Problemas y decisiones</h3>
                 <ol>
-                    <li><strong>Cuándo planificar la ruta.</strong> Al principio intenté recalcular el siguiente movimiento cada vez que el robot llegaba a una celda. Tras revisarlo en clase, cambié a calcular la ruta completa al inicio y seguirla. Así, el planificador mantiene el orden de cobertura y el controlador se ocupa de alcanzar cada objetivo.</li>
-                    <li><strong>Parámetros de la rejilla.</strong> Tuve que ajustar la erosión, el porcentaje de píxeles oscuros que define un obstáculo y el tamaño de celda. Fijé la celda al diámetro del robot y ajusté el umbral para obtener una representación útil del mapa.</li>
+                    <li><strong>Cuándo planificar la ruta.</strong> Al principio intenté recalcular el siguiente movimiento cada vez que el robot llegaba a una celda,porque a mi punto de vista aunque teniamos asegurado que no habria obstaculos dinámicos, planificar antes de cada decision hacia mas reactivo el código y aunque no se necesitaba asi tenia una implementación más "completa" y realista. Tras revisarlo en clase, se me hizo entender que los robots reales planifican al principio y si encuentran un obstaculo dinámico lo evaden y luego vuelven al path planificado, es por eso decidi cambiar y a calcular la ruta completa al inicio y seguirla. Así, el planificador mantiene el orden de cobertura y el controlador se ocupa de alcanzar cada objetivo.</li>
+                    <li><strong>Parámetros de la rejilla.</strong> Tuve que ajustar la erosión, el porcentaje de píxeles oscuros que define una celda entera como obstáculo y el tamaño de celda. Fijé la celda al diámetro del robot y lo que si pase mucho tiempo ajustando los umbrales y kernel de erosion hasta conseguir una representación útil del mapa en la que el robot no pase por zonas en las que el robot se quede atascado fisicamente.</li>
+                    <li><strong>Backtracking.</strong>Como se verá en el video, el robot casi al principio se deja una celda sin explorar y se tiene que volver a por ella al final, antes pasaba que tenía un backtracking simple en el que el robot seguia sus pasos hasta la ultima celda return point que habia visto, en mi caso como el robot habia estado operando 30min y  la celda return point la vio en el minuto 5,esto resultaba en que el robot volvia sobre sus pasos hasta alli y tardaba 25min,por eso al final cambie el backtracking simple por una busqueda bfs que busca un atajo al return point pasando por las celdas ya visitadas</li>
                 </ol>
             </section>
 
             <section id="resultados" aria-labelledby="titulo-resultados">
                 <h2 id="titulo-resultados">Resultados</h2>
-                <p>El vídeo muestra la ejecución del robot y la visualización de la exploración. Está acelerado a ×16.</p>
+                <p>El vídeo muestra la ejecución del robot y la visualización de la exploración. Está acelerado a ×16. (Se recomienda chrome, por ejemplo en opera no se me visualiza el vídeo).</p>
                 <figure class="figure-card video-card">
                     <video controls preload="metadata" playsinline>
                         <source src="resources/rob_servicio_p1_justodariovalverde.mp4" type="video/mp4">
                         Tu navegador no puede reproducir este vídeo. Puedes abrir el archivo <a href="resources/rob_servicio_p1_justodariovalverde.mp4">aquí</a>.
                     </video>
-                    <figcaption>Exploración del entorno con la ruta planificada, a velocidad ×16.</figcaption>
                 </figure>
             </section>
 
-            <section id="conclusiones" aria-labelledby="titulo-conclusiones">
-                <h2 id="titulo-conclusiones">Conclusiones</h2>
-                <p>La práctica conecta tres partes del problema: registrar el mapa respecto al mundo de Gazebo, discretizar el entorno para representar obstáculos y zonas visitadas, y planificar una ruta que el robot pueda seguir. La matriz afín permitió convertir entre píxeles y metros, y la rejilla hizo posible aplicar la exploración BSA sobre celdas del tamaño del robot.</p>
-                <p>La experiencia también mostró que separar la planificación de la ruta del control de movimiento facilita organizar el programa. Como siguiente mejora, sería interesante revisar el plan durante la ejecución si aparecieran obstáculos dinámicos.</p>
-            </section>
         </article>
 
         <a class="back-link" href="../">← Volver al inicio</a>
