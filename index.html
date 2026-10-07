@@ -3,27 +3,51 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>Robótica de Servicio</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Blog de las prácticas de Robótica de Servicio.">
+    <title>Robótica de Servicio | Blog de prácticas</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
+    <header class="site-header">
+        <nav class="site-nav" aria-label="Navegación principal">
+            <a class="site-brand" href="./">Robótica de Servicio</a>
+            <span class="nav-note">Blog de prácticas</span>
+        </nav>
+    </header>
 
-    <h1>Robótica de Servicio</h1>
+    <main class="container home-container">
+        <section class="hero" aria-labelledby="titulo-principal">
+            <p class="eyebrow">Memorias de laboratorio</p>
+            <h1 id="titulo-principal">Robótica de Servicio</h1>
+            <p>Un cuaderno de prácticas sobre percepción, planificación y movimiento de robots móviles.</p>
+        </section>
 
-    <p>Blog de las prácticas de Robótica de Servicio.</p>
+        <section class="content-card" aria-labelledby="practicas">
+            <h2 id="practicas">Prácticas</h2>
+            <p>En cada memoria recojo los objetivos, el desarrollo y los resultados de la práctica, junto con el vídeo de la simulación.</p>
 
-    <h2>Prácticas</h2>
+            <ul class="practice-list">
+                <li>
+                    <a class="practice-card" href="p1/">
+                        <span class="practice-number" aria-hidden="true">01</span>
+                        <h3>Práctica 1</h3>
+                        <p>Registro del mapa y exploración con el algoritmo BSA.</p>
+                    </a>
+                </li>
+                <li>
+                    <div class="practice-card practice-card--pending" aria-label="Práctica 2: memoria en preparación">
+                        <span class="practice-number" aria-hidden="true">02</span>
+                        <h3>Práctica 2</h3>
+                        <p>Memoria en preparación.</p>
+                    </div>
+                </li>
+            </ul>
+        </section>
+    </main>
 
-    <ul>
-        <li>
-            <a href="p1/">Práctica 1</a>
-        </li>
-
-        <li>
-            <a href="p2/">Práctica 2</a>
-        </li>
-    </ul>
-
+    <footer class="site-footer">Robótica de Servicio · Blog de prácticas</footer>
 </body>
 
 </html>

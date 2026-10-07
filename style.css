@@ -1,0 +1,376 @@
+:root {
+    color-scheme: light;
+    --ink: #20312c;
+    --muted: #61706a;
+    --paper: #ffffff;
+    --canvas: #f3f5f0;
+    --green: #315b49;
+    --green-dark: #203f34;
+    --lime: #dce8c7;
+    --line: #dfe6dd;
+    --code: #17231f;
+    --accent: #e8b95b;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    margin: 0;
+    background: var(--canvas);
+    color: var(--ink);
+    font-family: "Segoe UI", Roboto, Arial, sans-serif;
+    font-size: 1rem;
+    line-height: 1.7;
+}
+
+a {
+    color: var(--green);
+}
+
+a:hover {
+    color: var(--green-dark);
+}
+
+.site-header {
+    background: var(--green-dark);
+    color: #fff;
+}
+
+.site-nav {
+    width: min(1080px, calc(100% - 2.5rem));
+    min-height: 68px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.site-nav a {
+    color: #fff;
+    text-decoration: none;
+}
+
+.site-brand {
+    font-weight: 750;
+    letter-spacing: 0.02em;
+}
+
+.nav-note {
+    color: #d3e0d8;
+    font-size: 0.9rem;
+}
+
+.container {
+    width: min(900px, calc(100% - 2.5rem));
+    margin: 0 auto;
+}
+
+.home-container {
+    width: min(1080px, calc(100% - 2.5rem));
+}
+
+.hero {
+    margin: 2.5rem 0 1.5rem;
+    padding: clamp(1.7rem, 5vw, 3.5rem);
+    border-radius: 22px;
+    background: var(--green);
+    color: #fff;
+    box-shadow: 0 14px 34px #203f341c;
+}
+
+.hero h1 {
+    max-width: 760px;
+    margin: 0.25rem 0 0.75rem;
+    font-size: clamp(2.2rem, 6vw, 3.7rem);
+    line-height: 1.08;
+}
+
+.hero p {
+    max-width: 680px;
+    margin: 0;
+    color: #e1ebe4;
+    font-size: 1.1rem;
+}
+
+.eyebrow {
+    margin: 0;
+    color: var(--accent);
+    font-size: 0.78rem;
+    font-weight: 800;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+}
+
+.content-card,
+.practice-card,
+.media-card {
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    background: var(--paper);
+    box-shadow: 0 5px 18px #203f340a;
+}
+
+.content-card {
+    margin: 1.5rem 0 3rem;
+    padding: clamp(1.25rem, 4vw, 2.5rem);
+}
+
+.content-card h2,
+.content-card h3 {
+    color: var(--green-dark);
+    line-height: 1.25;
+}
+
+.content-card h2 {
+    margin-top: 2.2rem;
+    padding-bottom: 0.45rem;
+    border-bottom: 1px solid var(--line);
+}
+
+.content-card h2:first-child {
+    margin-top: 0;
+}
+
+.content-card h3 {
+    margin-top: 1.8rem;
+}
+
+.practice-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1rem;
+    margin: 1.25rem 0 0;
+    padding: 0;
+    list-style: none;
+}
+
+.practice-card {
+    display: block;
+    height: 100%;
+    padding: 1.25rem;
+    color: var(--ink);
+    text-decoration: none;
+    transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.practice-card[href]:hover {
+    transform: translateY(-3px);
+    border-color: #a9c3ae;
+    box-shadow: 0 10px 24px #203f3415;
+}
+
+.practice-card--pending {
+    color: var(--muted);
+}
+
+.practice-number {
+    display: inline-grid;
+    width: 2.4rem;
+    height: 2.4rem;
+    place-items: center;
+    border-radius: 50%;
+    background: var(--lime);
+    color: var(--green-dark);
+    font-weight: 800;
+}
+
+.practice-card h3 {
+    margin: 0.85rem 0 0.25rem;
+}
+
+.practice-card p {
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.95rem;
+}
+
+.breadcrumb {
+    margin: 1.6rem 0 0;
+    color: var(--muted);
+    font-size: 0.92rem;
+}
+
+.breadcrumb a {
+    text-decoration: none;
+}
+
+.page-hero {
+    margin-top: 1rem;
+    padding: 1.5rem 0 1.3rem;
+}
+
+.page-hero h1 {
+    margin: 0.2rem 0 0.5rem;
+    color: var(--green-dark);
+    font-size: clamp(2.1rem, 5vw, 3rem);
+    line-height: 1.15;
+}
+
+.page-hero p {
+    max-width: 700px;
+    margin: 0;
+    color: var(--muted);
+    font-size: 1.08rem;
+}
+
+.phase-label {
+    display: inline-block;
+    margin: 0.4rem 0 0;
+    padding: 0.2rem 0.65rem;
+    border-radius: 999px;
+    background: var(--lime);
+    color: var(--green-dark);
+    font-size: 0.82rem;
+    font-weight: 700;
+}
+
+.callout {
+    margin: 1.25rem 0;
+    padding: 1rem 1.15rem;
+    border-left: 4px solid #94ad72;
+    border-radius: 0 10px 10px 0;
+    background: #f1f5e9;
+}
+
+.callout p:last-child {
+    margin-bottom: 0;
+}
+
+.figure-card {
+    margin: 1.5rem 0;
+    padding: 1rem;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: #fbfcfa;
+}
+
+.figure-card img,
+.figure-card video {
+    display: block;
+    width: 100%;
+    height: auto;
+    border-radius: 9px;
+}
+
+.figure-card img {
+    max-width: 700px;
+    margin: 0 auto;
+}
+
+figcaption {
+    margin-top: 0.75rem;
+    color: var(--muted);
+    font-size: 0.9rem;
+    text-align: center;
+}
+
+.code-caption {
+    margin: 1.25rem 0 0.5rem;
+    color: var(--green-dark);
+    font-size: 0.95rem;
+    font-weight: 750;
+}
+
+pre {
+    overflow-x: auto;
+    margin: 0.5rem 0 1.5rem;
+    padding: 1.15rem 1.25rem;
+    border: 1px solid #273a32;
+    border-radius: 12px;
+    background: var(--code);
+    color: #e5eee7;
+    font-size: 0.88rem;
+    line-height: 1.55;
+    tab-size: 4;
+}
+
+pre code {
+    font-family: "Cascadia Code", "SFMono-Regular", Consolas, monospace;
+}
+
+.result-table {
+    width: 100%;
+    margin: 1rem 0;
+    border-collapse: collapse;
+}
+
+.result-table th,
+.result-table td {
+    padding: 0.7rem;
+    border-bottom: 1px solid var(--line);
+    text-align: left;
+}
+
+.result-table th {
+    color: var(--green-dark);
+}
+
+.video-card {
+    padding: 0.75rem;
+    background: #17231f;
+}
+
+.video-card figcaption {
+    color: #e1ebe4;
+}
+
+.back-link {
+    display: inline-block;
+    margin: 0.5rem 0 2.5rem;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.site-footer {
+    padding: 1.5rem 1rem;
+    background: #e8ede7;
+    color: var(--muted);
+    font-size: 0.9rem;
+    text-align: center;
+}
+
+@media (max-width: 600px) {
+    .site-nav,
+    .container,
+    .home-container {
+        width: min(100% - 1.5rem, 900px);
+    }
+
+    .nav-note {
+        display: none;
+    }
+
+    .hero {
+        margin-top: 1.25rem;
+        border-radius: 16px;
+    }
+
+    .content-card {
+        border-radius: 13px;
+    }
+
+    .result-table th,
+    .result-table td {
+        padding: 0.55rem 0.35rem;
+        font-size: 0.9rem;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    html {
+        scroll-behavior: auto;
+    }
+
+    *,
+    *::before,
+    *::after {
+        transition-duration: 0.01ms !important;
+    }
+}
