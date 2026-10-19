@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Memoria de la práctica de Robótica: Dron de Búsqueda y Rescate y Brazos Robóticos">
+    <title>Práctica | Robótica de Servicio</title>
+    <link rel="stylesheet" href="../style.css">
+</head>
+
+<body>
+    <header class="site-header">
+        <nav class="site-nav" aria-label="Navegación principal">
+            <a class="site-brand" href="../">Robótica de Servicio</a>
+            <span class="nav-note">Blog de la práctica</span>
+        </nav>
+    </header>
+
+    <main class="container">
+        <p class="breadcrumb"><a href="../">Inicio</a> / Práctica</p>
+
+        <header class="page-hero">
+            <p class="eyebrow">Dron de Rescate y Manipuladores</p>
+            <h1>Práctica:</h1>
+            <p>Implementación de un dron de rescate en Gazebo con escaneo en rejilla y detección facial, y evaluación de brazos robóticos Hiwonder SO-ARM101.</p>
+        </header>
+
+        <article class="content-card">
+            <nav class="callout" aria-label="Contenido de la memoria">
+                <strong>En esta memoria</strong>
+                <p><a href="#objetivos">Objetivos</a> · <a href="#dron-rescate">Dron de Búsqueda</a> · <a href="#brazos-roboticos">Manipuladores</a> · <a href="#resultados">Resultados</a></p>
+            </nav>
+
+            <section aria-labelledby="introduccion">
+                <h2 id="introduccion">Introducción</h2>
+                <p>Esta práctica se divide en dos partes. La primera consiste en programar la lógica de control, navegación y visión artificial de un dron autónomo en Gazebo (entorno JdeRobot) para localizar personas perdidas en un área de rescate. La segunda parte es una evaluación observacional de una tarea de recogida y colocación (pick-and-place) realizada por dos brazos robóticos en una mochila.</p>
+            </section>
+
+            <section id="objetivos" aria-labelledby="titulo-objetivos">
+                <h2 id="titulo-objetivos">Objetivos</h2>
+                <ul>
+                    <li>Transformar coordenadas GPS (latitud/longitud) a coordenadas locales UTM para la navegación del dron.</li>
+                    <li>Generar y seguir una ruta de exploración en zigzag (boustrophedon) dividiendo la zona de búsqueda en una cuadrícula.</li>
+                    <li>Implementar una máquina de estados para controlar las fases de vuelo (despegue, viaje, escaneo, retorno y recarga).</li>
+                    <li>Configurar un clasificador Haar Cascade rotatorio para detectar víctimas desde la cámara ventral, filtrando falsos positivos por odometría.</li>
+                    <li>Analizar la coordinación de dos brazos robóticos en una tarea cooperativa.</li>
+                </ul>
+            </section>
+
+            <section id="dron-rescate" aria-labelledby="titulo-dron">
+                <h2 id="titulo-dron">Desarrollo: Dron de Búsqueda</h2>
+                <p class="phase-label">Fase 1 · Navegación y Cuadrícula</p>
+                <p>El primer paso fue definir el área de exploración (35x35m) centrada en las coordenadas de los supervivientes. Utilicé la librería <code>utm</code> para convertir las coordenadas GPS de la estación base y de los supervivientes a coordenadas Cartesianas (Easting/Northing). A partir de la diferencia, establecí el centro de la cuadrícula de búsqueda.</p>
+
+                <p>Implementé la función <code>build_search_grid</code> para dividir el área en celdas de tamaño configurable (usando finalmente celdas de 2x2m o 3x3m para evitar duplicidades). La función <code>generate_zigzag_path</code> ordena estas celdas en un patrón de barrido de izquierda a derecha y derecha a izquierda alternativamente.</p>
+
+                <p class="phase-label">Fase 2 · Control y Visión</p>
+                <p>El control del dron se maneja con una máquina de estados operando a 30Hz a través de las APIs <code>HAL</code> y <code>Frequency</code>. Durante el estado <code>TRAVELING</code>, el dron calcula el ángulo de guiñada (yaw) hacia la siguiente celda usando <code>math.atan2</code> para volar "hacia adelante" y no de lado, lo que estabiliza la cámara. Al acercarse a menos de 0.3m del centro de la celda, pasa al estado <code>SCANNING</code>.</p>
+                
+                <p>En el escaneo, el dron se mantiene estático (usando <code>hover_ticks</code>) durante aproximadamente 1 segundo (30 iteraciones) para mitigar el desenfoque por movimiento. Después, procesa la imagen de la cámara ventral con <code>detect_faces_rotated</code>.</p>
+
+                <p class="code-caption">Configuración del detector en <code>detect_faces_rotated</code></p>
+                <pre><code># Rotamos la imagen para encontrar caras en cualquier orientación
+for i in range(n_steps):
+    angle = i * (360.0 / n_steps)
+    M = cv2.getRotationMatrix2D(center, angle, 1.0)
+    rotated = cv2.warpAffine(gray, M, (w, h))
+    
+    # Parámetros ajustados: scaleFactor=1.05 y minNeighbors=1 o 2
+    faces = face_cascade.detectMultiScale(rotated, scaleFactor=1.05, minNeighbors=2)
+    if len(faces) > 0:
+        return faces # Retorno temprano por eficiencia</code></pre>
+
+                <p>Para evitar registrar a la misma persona varias veces al verla desde celdas adyacentes, implementé el filtro de odometría <code>is_new_person</code>. Este calcula la distancia euclidiana entre la posición actual del dron y las posiciones de las víctimas ya registradas. Si la distancia es menor a un umbral (por ejemplo, 2.5m), se asume que es la misma persona.</p>
+            </section>
+
+            <section id="brazos-roboticos" aria-labelledby="titulo-brazos">
+                <h3 id="titulo-brazos">Fase 3 · Brazos Robóticos Hiwonder</h3>
+                <p>En el vídeo proporcionado, se observan dos brazos robóticos Hiwonder SO-ARM101 ejecutando una tarea de manipulación y empaquetado. Un brazo sujeta un libro de la mesa y lo introduce en una mochila gris. A continuación, los brazos colaboran para cerrar la mochila: un brazo tira del borde de la cremallera para tensar la tela, mientras el otro brazo agarra el tirador de la cremallera y la cierra a lo largo del recorrido.</p>
+            </section>
+
+            <section aria-labelledby="problemas">
+                <h3 id="problemas">Problemas y decisiones (Dron)</h3>
+                <ol>
+                    <li><strong>Desenfoque por movimiento (Motion Blur).</strong> Al principio, el dron escaneaba la imagen instantáneamente al entrar en la celda. Como la cámara estaba sujeta al chasis, el frenado aerodinámico causaba cabeceo y hacía que la imagen saliera borrosa, cegando al clasificador Haar. Lo solucioné implementando un temporizador <code>hover_ticks</code> para estabilizar el vuelo antes de la captura.</li>
+                    <li><strong>Sobrecarga de la CPU en el detector.</strong> La primera versión rotaba la imagen 20 veces por iteración, lo que congestionaba el simulador. Optimicé la función para hacer giros más grandes (6-8 pasos) y devolver los resultados tan pronto como se encontrara el primer acierto (retorno temprano).</li>
+                    <li><strong>Falsos positivos por duplicidad.</strong> Con celdas de 1x1m y un filtro de distancia de 1.0m, el dron registraba a la misma persona varias veces desde diferentes posiciones, resultando en 9 detecciones cuando solo había 6 víctimas reales. Esto se resolvió aumentando el tamaño de la celda y ampliando el umbral de distancia en <code>is_new_person</code> para englobar el campo de visión de la cámara.</li>
+                    <li><strong>Ajuste de parámetros Haar.</strong> Tuve que flexibilizar el clasificador ajustando <code>scaleFactor=1.05</code> y reduciendo <code>minNeighbors</code> para que detectara rostros pequeños a la altura operativa de 3 o 4 metros sin descartarlos prematuramente.</li>
+                </ol>
+            </section>
+
+            <section id="resultados" aria-labelledby="titulo-resultados">
+                <h2 id="titulo-resultados">Resultados</h2>
+                <p>El código modificado del dron logra registrar la cuadrícula de forma estable, detectando y filtrando a las víctimas. Al concluir la misión (estado <code>FINISHED</code>), imprime en consola un resumen final asegurando que las coordenadas almacenadas en la lista <code>persons_found</code> corresponden a individuos únicos. También, el vídeo de los brazos Hiwonder demuestra una ejecución exitosa de pick-and-place y cierre coordinado de la cremallera.</p>
+                <figure class="figure-card video-card">
+                    <iframe width="560" height="315" src="https://www.youtube.com/embed/9oe2bMuy3YA" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+                </figure>
+            </section>
+
+        </article>
+
+        <a class="back-link" href="../">← Volver al inicio</a>
+    </main>
+
+    <footer class="site-footer">Robótica de Servicio · Práctica de Rescate y Manipulación</footer>
+</body>
+
+</html>
