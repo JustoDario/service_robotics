@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Memoria de la práctica 3 de Robótica de Servicio">
+    <title>Práctica 3 | Robótica de Servicio</title>
+    <link rel="stylesheet" href="../style.css">
+</head>
+
+<body>
+    <header class="site-header">
+        <nav class="site-nav" aria-label="Navegación principal">
+            <a class="site-brand" href="../">Robótica de Servicio</a>
+            <span class="nav-note">Blog de la práctica 3</span>
+        </nav>
+    </header>
+
+    <main class="container">
+        <p class="breadcrumb"><a href="../">Inicio</a> / Práctica 3</p>
+
+        <header class="page-hero">
+            <p class="eyebrow">Aparcamiento autónomo</p>
+            <h1>Práctica 3:</h1>
+            <p>Detección de un hueco de aparcamiento, posicionamiento del vehículo y maniobra final usando LiDAR y una máquina de estados.</p>
+        </header>
+
+        <article class="content-card">
+            <nav class="callout" aria-label="Contenido">
+                <strong>En esta memoria</strong>
+                <p><a href="#objetivos">Objetivos</a> · <a href="#desarrollo">Desarrollo</a> · <a href="#resultados">Resultados</a></p>
+            </nav>
+
+            <section aria-labelledby="introduccion">
+                <h2 id="introduccion">Introducción</h2>
+                <p>La práctica consistió en programar un vehículo que detectara un hueco libre en la calzada, se posicionara correctamente y realizara la maniobra de aparcamiento sin colisionar con los vehículos adyacentes. Para ello combiné filtrado del LiDAR, estimación de distancias laterales y una máquina de estados para controlar cada fase del aparcamiento.</p>
+            </section>
+
+            <section id="objetivos" aria-labelledby="titulo-objetivos">
+                <h2 id="titulo-objetivos">Objetivos</h2>
+                <ul>
+                    <li>Reducir la información del LiDAR para quedarnos únicamente con los puntos útiles del vehículo y del lado derecho.</li>
+                    <li>Detectar un hueco libre a partir de la distancia lateral y del cambio de profundidad del entorno.</li>
+                    <li>Posicionar el coche de forma paralela al borde del hueco antes de iniciar la maniobra.</li>
+                    <li>Implementar una secuencia de estados para retroceder, girar, enderezar y centrar el vehículo dentro del hueco.</li>
+                </ul>
+            </section>
+
+            <section id="desarrollo" aria-labelledby="titulo-desarrollo">
+                <h2 id="titulo-desarrollo">Desarrollo</h2>
+
+                <p class="phase-label">Filtrado del LiDAR</p>
+                <p>La primera parte del trabajo fue procesar el escáner para eliminar puntos irrelevantes. Solo mantuve aquellos que estaban a la altura del coche, a la derecha del vehículo y dentro de una franja útil de la escena. Con esto conseguí simplificar la lectura del entorno y evitar que los puntos lejanos o fuera de la zona de aparcamiento afectaran a la decisión.</p>
+
+                <p>Con estos puntos calculé una distancia lateral media para estimar si había un coche al lado y otra medida de profundidad para detectar cuándo había un hueco suficientemente grande. La idea era detectar el cambio entre “coche presente” y “espacio libre” sin depender de información extra.</p>
+
+                <p class="phase-label">Búsqueda del hueco</p>
+                <p>Una vez posicionado en paralelo al tráfico, el coche avanzaba lentamente y observaba la distancia lateral. Cuando esta distancia aumentaba de forma sostenida, significaba que había un hueco libre delante. En ese momento se guardaba la información y se preparaba la maniobra de estacionamiento.</p>
+
+                <p class="phase-label">Máquina de estados</p>
+                <p>La maniobra se dividió en varias fases: giro de entrada, retroceso con trayectoria curvilínea, enderezado del vehículo y centrado final dentro del hueco. Cada estado se activaba cuando se cumplía una condición concreta de ángulo o distancia, usando <code>HAL.getPose3d().yaw</code> y el propio LiDAR para validar que el coche estaba en la posición correcta.</p>
+                <p>En resumen, el sistema seguía esta secuencia: se giraba para entrar en el hueco, se retrocedía con el volante orientado, se corregía la alineación del coche y, por último, se ajustaba la posición central para dejarlo bien colocado dentro del espacio disponible.</p>
+            </section>
+
+            <section aria-labelledby="problemas">
+                <h3 id="problemas">Problemas y decisiones</h3>
+                <ol>
+                    <li><strong>Ajuste de umbrales.</strong> El principal reto fue calibrar la distancia lateral y los ángulos de giro para que la detección del hueco y la maniobra fueran estables. El coche debía reaccionar a cambios suaves sin entrar en oscilaciones.</li>
+                    <li><strong>Secuencia de giro y retroceso.</strong> La máquina de estados tuvo que reordenarse varias veces para que la trayectoria fuera más natural: primero girar, luego retroceder, después enderezar y finalmente centrar el vehículo en el hueco.</li>
+                </ol>
+            </section>
+
+            <section id="resultados" aria-labelledby="titulo-resultados">
+                <h2 id="titulo-resultados">Resultados</h2>
+                <p>La implementación permitió detectar un hueco libre, posicionar el vehículo correctamente y completar la maniobra de aparcamiento con una secuencia controlada por estados. El resultado final fue un aparcamiento estable y consistente en la prueba realizada.</p>
+
+                <figure class="figure-card video-card">
+                    <video controls preload="metadata" playsinline>
+                        <p>El vídeo de la prueba final se añadirá aquí al terminar la memoria.</p>
+                    </video>
+                </figure>
+            </section>
+        </article>
+
+        <a class="back-link" href="../">← Volver al inicio</a>
+    </main>
+
+    <footer class="site-footer">Robótica de Servicio · Práctica 3</footer>
+</body>
+
+</html>
